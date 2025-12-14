@@ -1,0 +1,1285 @@
+openapi: 3.0.3
+info:
+  title: API E-commerce 2025
+  version: 1.0.0
+  description: >
+    REST API for the SneakVault storefront. All paths are prefixed with `/api`
+    on the server; the `servers` section already reflects that base URL.
+servers:
+  - url: http://localhost:4000/api
+    description: Local development server
+tags:
+  - name: Auth
+    description: Inscription & connexion
+  - name: Users
+    description: Profil utilisateur connecté
+  - name: Products
+    description: Catalogue produit public & admin
+  - name: Cart
+    description: Panier utilisateur
+  - name: Orders
+    description: Commandes créées à partir du panier
+  - name: Payments
+    description: Paiements mockés (simulation)
+  - name: Deliveries
+    description: Suivi des livraisons
+  - name: Recommendations
+    description: Recommandations personnalisées
+  - name: Stocks
+    description: Lecture & mise à jour des stocks
+  - name: Reviews
+    description: Avis produits
+  - name: Admin
+    description: Dashboard et outils réservés aux admins
+paths:
+  /auth/register:
+    post:
+      tags: [Auth]
+      summary: Inscrire un nouvel utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthRegisterInput'
+      responses:
+        '201':
+          description: Inscription réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '400':
+          description: Email déjà pris ou payload invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /auth/login:
+    post:
+      tags: [Auth]
+      summary: Connecter un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AuthLoginInput'
+      responses:
+        '200':
+          description: Connexion réussie
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AuthResponse'
+        '401':
+          description: Identifiants invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /users/me:
+    get:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Récupérer le profil connecté
+      responses:
+        '200':
+          description: Profil courant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    put:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour le profil connecté
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserProfileInput'
+      responses:
+        '200':
+          description: Profil mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    delete:
+      tags: [Users]
+      security: [{ bearerAuth: [] }]
+      summary: Supprimer définitivement le compte connecté
+      responses:
+        '200':
+          description: Suppression confirmée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+
+  /products:
+    get:
+      tags: [Products]
+      summary: Lister les produits actifs
+      responses:
+        '200':
+          description: Liste de produits
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      tags: [Products]
+      summary: Créer un produit (ADMIN)
+      description: Nécessite `role=ADMIN`.
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Produit créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /products/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [Products]
+      summary: Consulter un produit
+      responses:
+        '200':
+          description: Produit trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Products]
+      summary: Modifier un produit (ADMIN)
+      security: [{ bearerAuth: [] }]
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Produit mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Products]
+      summary: Supprimer un produit (ADMIN)
+      security: [{ bearerAuth: [] }]
+      responses:
+        '204':
+          description: Produit supprimé
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /cart:
+    get:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Obtenir le panier de l'utilisateur
+      responses:
+        '200':
+          description: Panier courant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '401':
+          $ref: '#/components/responses/UnauthorizedError'
+    post:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Ajouter un article au panier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemInput'
+      responses:
+        '200':
+          description: Panier mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '400':
+          description: Stock insuffisant ou payload invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Vider le panier
+      responses:
+        '200':
+          description: Panier vidé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CartClearedResponse'
+
+  /cart/item/{itemId}:
+    parameters:
+      - $ref: '#/components/parameters/CartItemId'
+    put:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Modifier la quantité d'un article
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CartItemQuantityInput'
+      responses:
+        '200':
+          description: Panier mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    delete:
+      tags: [Cart]
+      security: [{ bearerAuth: [] }]
+      summary: Supprimer un article du panier
+      responses:
+        '200':
+          description: Panier mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Cart'
+
+  /orders:
+    post:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Créer une commande depuis le panier
+      description: Vide le panier, décrémente les stocks et ouvre une livraison.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutInput'
+      responses:
+        '201':
+          description: Commande et livraison créées
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '400':
+          description: Panier vide ou adresse invalide
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /orders/me:
+    get:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Lister les commandes utilisateur
+      responses:
+        '200':
+          description: Commandes enrichies des livraisons
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/OrderWithDelivery'
+
+  /orders/{orderId}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    get:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Consulter une commande précise
+      responses:
+        '200':
+          description: Commande trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Orders]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour le statut d'une commande (ADMIN ou interne)
+      description: Utilisé par l'admin pour changer PENDING/PAID/SHIPPED etc.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdateInput'
+      responses:
+        '200':
+          description: Commande mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+  /payments:
+    post:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Exécuter un paiement mocké
+      description: Simule un paiement par carte et marque la commande comme payée si succès.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PaymentInput'
+      responses:
+        '201':
+          description: Paiement créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '400':
+          description: Données bancaires invalides
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /payments/me:
+    get:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Lister les paiements de l'utilisateur
+      responses:
+        '200':
+          description: Historique des paiements
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Payment'
+
+  /payments/{id}:
+    parameters:
+      - $ref: '#/components/parameters/PaymentId'
+    get:
+      tags: [Payments]
+      security: [{ bearerAuth: [] }]
+      summary: Obtenir le détail d'un paiement
+      responses:
+        '200':
+          description: Paiement trouvé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Payment'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /deliveries:
+    get:
+      tags: [Deliveries]
+      security: [{ bearerAuth: [] }]
+      summary: Lister toutes les livraisons (ADMIN)
+      parameters:
+        - in: query
+          name: status
+          schema:
+            type: string
+            description: Filtre optionnel (PENDING, SHIPPED, etc.)
+      responses:
+        '200':
+          description: Livraisons correspondant au filtre
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Delivery'
+        '403':
+          $ref: '#/components/responses/ForbiddenError'
+
+  /deliveries/order/{orderId}:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    get:
+      tags: [Deliveries]
+      security: [{ bearerAuth: [] }]
+      summary: Récupérer la livraison d'une commande
+      responses:
+        '200':
+          description: Livraison utilisateur
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /deliveries/{id}:
+    parameters:
+      - $ref: '#/components/parameters/DeliveryId'
+    get:
+      tags: [Deliveries]
+      security: [{ bearerAuth: [] }]
+      summary: Consulter une livraison spécifique
+      responses:
+        '200':
+          description: Livraison trouvée
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /deliveries/{id}/status:
+    parameters:
+      - $ref: '#/components/parameters/DeliveryId'
+    patch:
+      tags: [Deliveries]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour le statut/tracking (ADMIN)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeliveryStatusUpdateInput'
+      responses:
+        '200':
+          description: Livraison mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Delivery'
+
+  /recommendations:
+    get:
+      tags: [Recommendations]
+      security: [{ bearerAuth: [] }]
+      summary: Recommandations personnalisées
+      parameters:
+        - in: query
+          name: lat
+          schema:
+            type: number
+          description: Latitude optionnelle pour suggérer des points relais
+        - in: query
+          name: lng
+          schema:
+            type: number
+          description: Longitude optionnelle
+      responses:
+        '200':
+          description: Recos et points de retrait proches
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecommendationResponse'
+
+  /stocks/{productId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [Stocks]
+      summary: Consulter le stock d'un produit
+      responses:
+        '200':
+          description: Stock courant
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+    put:
+      tags: [Stocks]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour le stock d'un produit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StockUpdateInput'
+      responses:
+        '200':
+          description: Nouveau stock
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StockResponse'
+
+  /reviews/product/{productId}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    get:
+      tags: [Reviews]
+      summary: Lister les avis d'un produit
+      responses:
+        '200':
+          description: Liste d'avis
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Review'
+    post:
+      tags: [Reviews]
+      security: [{ bearerAuth: [] }]
+      summary: Ajouter un avis utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ReviewInput'
+      responses:
+        '201':
+          description: Avis créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Review'
+
+  /reviews/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ReviewId'
+    delete:
+      tags: [Reviews]
+      security: [{ bearerAuth: [] }]
+      summary: Supprimer son propre avis
+      responses:
+        '200':
+          description: Avis supprimé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+        '404':
+          $ref: '#/components/responses/NotFound'
+
+  /reviews/admin/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ReviewId'
+    delete:
+      tags: [Reviews]
+      security: [{ bearerAuth: [] }]
+      summary: Supprimer un avis (ADMIN)
+      responses:
+        '200':
+          description: Avis supprimé par l'admin
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MessageResponse'
+
+  /admin/stats:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Tableau de bord global
+      description: Réservé aux admins (role=ADMIN).
+      responses:
+        '200':
+          description: KPIs du dashboard
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminStats'
+
+  /admin/products:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Lister tous les produits (admin)
+      responses:
+        '200':
+          description: Inventaire complet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+    post:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Créer un produit depuis le back-office
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '201':
+          description: Produit créé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /admin/products/{id}:
+    parameters:
+      - $ref: '#/components/parameters/ProductId'
+    put:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Mettre à jour un produit
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ProductInput'
+      responses:
+        '200':
+          description: Produit mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+    delete:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Désactiver un produit
+      responses:
+        '200':
+          description: Produit désactivé
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Product'
+
+  /admin/users:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Lister tous les utilisateurs
+      responses:
+        '200':
+          description: Utilisateurs du site
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/AdminUser'
+
+  /admin/users/{id}/role:
+    parameters:
+      - $ref: '#/components/parameters/UserId'
+    patch:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Changer le rôle d'un utilisateur
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserRoleUpdateInput'
+      responses:
+        '200':
+          description: Utilisateur mis à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AdminUser'
+
+  /admin/orders:
+    get:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Lister toutes les commandes
+      responses:
+        '200':
+          description: Historique complet
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+
+  /admin/orders/{id}/status:
+    parameters:
+      - $ref: '#/components/parameters/OrderId'
+    patch:
+      tags: [Admin]
+      security: [{ bearerAuth: [] }]
+      summary: Forcer un statut de commande
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OrderStatusUpdateInput'
+      responses:
+        '200':
+          description: Commande mise à jour
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Order'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  parameters:
+    ProductId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+        pattern: '^[a-f0-9]{24}$'
+    OrderId:
+      name: orderId
+      in: path
+      required: true
+      schema:
+        type: string
+    PaymentId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    DeliveryId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    CartItemId:
+      name: itemId
+      in: path
+      required: true
+      schema:
+        type: string
+    ReviewId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+    UserId:
+      name: id
+      in: path
+      required: true
+      schema:
+        type: string
+
+  responses:
+    UnauthorizedError:
+      description: JWT manquant ou invalide
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    ForbiddenError:
+      description: Rôle insuffisant
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+    NotFound:
+      description: Ressource introuvable
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+
+  schemas:
+    ErrorResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        fields:
+          type: array
+          items:
+            type: string
+    MessageResponse:
+      type: object
+      properties:
+        message:
+          type: string
+
+    AuthRegisterInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          minLength: 6
+        firstName:
+          type: string
+        lastName:
+          type: string
+    AuthLoginInput:
+      type: object
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    AuthResponse:
+      type: object
+      properties:
+        token:
+          type: string
+        user:
+          $ref: '#/components/schemas/User'
+
+    User:
+      type: object
+      properties:
+        id:
+          type: string
+          example: 65f9b5a3c5fa1d0a1a9b1234
+        email:
+          type: string
+        firstName:
+          type: string
+        lastName:
+          type: string
+        role:
+          type: string
+          enum: [USER, ADMIN]
+        createdAt:
+          type: string
+          format: date-time
+    UserProfileInput:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+    AdminUser:
+      allOf:
+        - $ref: '#/components/schemas/User'
+        - type: object
+          properties:
+            role:
+              type: string
+
+    Product:
+      type: object
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        brand:
+          type: string
+        category:
+          type: string
+        description:
+          type: string
+        price:
+          type: number
+          format: float
+        image:
+          type: string
+          format: uri
+        stock:
+          type: integer
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    ProductInput:
+      type: object
+      required: [name, price, brand, category, description, image, stock]
+      properties:
+        name: { type: string }
+        brand: { type: string }
+        category:
+          type: string
+          enum: [basketball, running, streetwear, classic, sportstyle]
+        description: { type: string }
+        price: { type: number, format: float }
+        image: { type: string }
+        stock: { type: integer, minimum: 0 }
+        isActive: { type: boolean }
+
+    Cart:
+      type: object
+      properties:
+        id:
+          type: string
+        user:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    CartItem:
+      type: object
+      properties:
+        id:
+          type: string
+        product:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+          minimum: 1
+    CartItemInput:
+      type: object
+      required: [productId, quantity]
+      properties:
+        productId:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    CartItemQuantityInput:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          minimum: 1
+    CartClearedResponse:
+      type: object
+      properties:
+        message:
+          type: string
+          example: Panier vidé
+        cart:
+          $ref: '#/components/schemas/Cart'
+
+    CheckoutInput:
+      type: object
+      required: [addressLine1, city, postalCode]
+      properties:
+        addressLine1: { type: string }
+        addressLine2: { type: string }
+        city: { type: string }
+        postalCode: { type: string }
+        country:
+          type: string
+          default: France
+    CheckoutResponse:
+      type: object
+      properties:
+        message:
+          type: string
+        order:
+          $ref: '#/components/schemas/Order'
+        delivery:
+          $ref: '#/components/schemas/Delivery'
+
+    Order:
+      type: object
+      properties:
+        id:
+          type: string
+        user:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/OrderItem'
+        status:
+          type: string
+          enum: [PENDING, PAID, SHIPPED, DELIVERED, CANCELLED]
+        totalAmount:
+          type: number
+          format: float
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        delivery:
+          $ref: '#/components/schemas/Delivery'
+    OrderItem:
+      type: object
+      properties:
+        product:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/Product'
+        quantity:
+          type: integer
+        unitPrice:
+          type: number
+        totalPrice:
+          type: number
+    OrderWithDelivery:
+      allOf:
+        - $ref: '#/components/schemas/Order'
+    OrderStatusUpdateInput:
+      type: object
+      required: [status]
+      properties:
+        status:
+          type: string
+          enum: [PENDING, PAID, SHIPPED, DELIVERED, CANCELLED]
+
+    Payment:
+      type: object
+      properties:
+        id: { type: string }
+        order: { type: string }
+        user: { type: string }
+        amount: { type: number }
+        method: { type: string }
+        status:
+          type: string
+          enum: [PENDING, SUCCESS, FAILED]
+        transactionRef:
+          type: string
+        cardLast4:
+          type: string
+        billingAddress:
+          $ref: '#/components/schemas/BillingAddress'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    BillingAddress:
+      type: object
+      required: [addressLine1, city, postalCode]
+      properties:
+        addressLine1: { type: string }
+        addressLine2: { type: string }
+        city: { type: string }
+        postalCode: { type: string }
+    PaymentInput:
+      type: object
+      required:
+        - orderId
+        - method
+        - cardNumber
+        - expiryMonth
+        - expiryYear
+        - cvc
+        - billingAddress
+      properties:
+        orderId: { type: string }
+        amount: { type: number }
+        method:
+          type: string
+          example: CARD
+        cardNumber:
+          type: string
+          example: '4242424242424242'
+        expiryMonth:
+          type: string
+          example: '05'
+        expiryYear:
+          type: string
+          example: '2028'
+        cvc:
+          type: string
+          example: '123'
+        billingAddress:
+          $ref: '#/components/schemas/BillingAddress'
+
+    Delivery:
+      type: object
+      properties:
+        id: { type: string }
+        order: { type: string }
+        user: { type: string }
+        status:
+          type: string
+          enum: [PENDING, PREPARING, SHIPPED, IN_TRANSIT, DELIVERED, CANCELLED]
+        trackingNumber: { type: string }
+        addressLine1: { type: string }
+        addressLine2: { type: string }
+        city: { type: string }
+        postalCode: { type: string }
+        country: { type: string }
+        createdAt: { type: string, format: date-time }
+    DeliveryStatusUpdateInput:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: [PENDING, PREPARING, SHIPPED, IN_TRANSIT, DELIVERED, CANCELLED]
+        trackingNumber:
+          type: string
+
+    Recommendation:
+      type: object
+      properties:
+        product:
+          $ref: '#/components/schemas/Product'
+        totalQuantity:
+          type: integer
+    PickupPoint:
+      type: object
+      properties:
+        name: { type: string }
+        lat: { type: number }
+        lng: { type: number }
+    RecommendationResponse:
+      type: object
+      properties:
+        recommendations:
+          type: array
+          items:
+            $ref: '#/components/schemas/Recommendation'
+        pickupPoints:
+          type: array
+          items:
+            $ref: '#/components/schemas/PickupPoint'
+
+    Review:
+      type: object
+      properties:
+        id: { type: string }
+        product:
+          oneOf:
+            - type: string
+            - $ref: '#/components/schemas/Product'
+        user:
+          type: object
+          properties:
+            _id: { type: string }
+            email: { type: string }
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+    ReviewInput:
+      type: object
+      required: [rating, comment]
+      properties:
+        rating:
+          type: integer
+          minimum: 1
+          maximum: 5
+        comment:
+          type: string
+
+    StockResponse:
+      type: object
+      properties:
+        productId: { type: string }
+        stock:
+          type: integer
+    StockUpdateInput:
+      type: object
+      required: [quantity]
+      properties:
+        quantity:
+          type: integer
+          description: Nouveau stock absolu
+
+    UserRoleUpdateInput:
+      type: object
+      required: [role]
+      properties:
+        role:
+          type: string
+          enum: [USER, ADMIN]
+
+    AdminStats:
+      type: object
+      properties:
+        productsCount: { type: integer }
+        usersCount: { type: integer }
+        ordersCount: { type: integer }
+        totalRevenue: { type: number }
+        lowStockProducts:
+          type: array
+          items:
+            $ref: '#/components/schemas/Product'
+        recentOrders:
+          type: array
+          items:
+            $ref: '#/components/schemas/Order'

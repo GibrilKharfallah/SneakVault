@@ -1,0 +1,13 @@
+type Stock {
+    productId: ID!
+    quantity: Int!
+    updatedAt: String!
+}
+
+extend type Query {
+    stock(productId: ID!): Stock
+}
+
+extend type Mutation {
+    updateStock(productId: ID!, quantity: Int!): Stock!
+}

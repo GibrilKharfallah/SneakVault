@@ -1,0 +1,50 @@
+# Architecture du projet SneakVault
+
+Ce document présente l’architecture globale du dépôt `projetapi`. Il couvre les principaux dossiers, les rôles de chaque sous-système (backend, frontend, documentation), ainsi que les dépendances techniques majeures.
+
+---
+
+## 1. Vue d’ensemble
+
+- **Backend (`/backend`)** : API Node.js/Express avec MongoDB, exposant des endpoints REST et GraphQL, plus les services métiers (paiement mocké, recommandations, géolocalisation).
+- **Frontend (`/frontend`)** : SPA React propulsée par Vite et TailwindCSS, qui consomme l’API pour offrir le parcours client et les interfaces d’administration.
+- **Documentation (`/documentation`)** : ressources pédagogiques (schémas d’architecture, spécifications API, rapports finaux, intégration API externe).
+
+---
+
+## 2. Structure du projet
+
+```bash
+.
+├── README.md
+├── backend
+│   ├── config            # Connexion MongoDB, Swagger
+│   ├── controllers       # Logique REST (auth, produits, panier, paiement…)
+│   ├── docs              # Documentation API côté backend
+│   ├── graphql           # Apollo Server, schémas SDL, resolvers, contextes
+│   ├── middleware        # Auth JWT, validation, rate limiting, erreurs
+│   ├── models            # Schémas Mongoose (User, Product, Order, etc.)
+│   ├── routes            # Définition des endpoints REST
+│   ├── services          # Services métiers (paiement mock, reco, emails…)
+│   ├── test              # Squelettes de tests pour les APIs prioritaires
+│   ├── utils             # Helpers éventuels
+│   ├── server.js         # Point d’entrée Express + Apollo
+│   ├── package.json
+│   └── package-lock.json
+├── documentation
+│   ├── API_externe       # Intégration OpenStreetMap / Nominatim
+│   ├── APIs              # Spécifications REST & GraphQL détaillées
+│   ├── Rapport_Final     # Livrables finaux du module
+│   └── architecture      # Ce document + diagrammes techniques
+└── frontend
+    ├── src
+    │   ├── App.jsx       # Routage principal React Router
+    │   ├── api.js        # Client Axios centralisé
+    │   ├── index.css     
+    │   ├── components    # Navbar, ProductCard, ProtectedRoute…
+    │   ├── pages         # Home, Products, Cart, Checkout, Admin, etc.
+    │   └── main.jsx      # Bootstrap React/Vite
+    ├── index.html
+    ├── tailwind.config.js
+    ├── package.json
+    └── package-lock.json
