@@ -8,7 +8,7 @@ Ce document présente l’architecture globale du dépôt `projetapi`. Il couvre
 
 - **Backend (`/backend`)** : API Node.js/Express avec MongoDB, exposant des endpoints REST et GraphQL, plus les services métiers (paiement mocké, recommandations, géolocalisation).
 - **Frontend (`/frontend`)** : SPA React propulsée par Vite et TailwindCSS, qui consomme l’API pour offrir le parcours client et les interfaces d’administration.
-- **Documentation (`/documentation`)** : ressources pédagogiques (schémas d’architecture, spécifications API, rapports finaux, intégration API externe).
+- **Documentation (`/documentation`)** : ressources pédagogiques (schémas d’architecture, spécifications API, intégration API externe).
 
 ---
 
