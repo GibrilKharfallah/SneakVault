@@ -48,3 +48,4 @@ Ce document présente l’architecture globale du dépôt `projetapi`. Il couvre
     ├── tailwind.config.js
     ├── package.json
     └── package-lock.json
+```
