@@ -37,7 +37,7 @@ Le dépôt contient :
 
 - un dossier **backend/** → API REST + GraphQL  
 - un dossier **frontend/** → application React SPA  
-- un dossier **documentation/** avec les livrables liés aux TPs et au projet  
+- un dossier **documentation/** avec les livrables liés au projet  
 - les fichiers de configuration (Vite, eslint, env, etc.)
 
 > Les deux parties fonctionnent ensemble mais peuvent être déployées ou testées indépendamment.
